@@ -49,3 +49,5 @@ def preprocess(image):
     # RGB调整
     adjusted = adjust_RGB(patch)
     return adjusted
+
+
