@@ -1,5 +1,5 @@
 import os
-os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
+#os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
 import torch
 import torch.nn as nn
 import torchvision
@@ -76,7 +76,7 @@ class AlexNet(nn.Module):
 
 # 配置
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-os.chdir('D:/User/Documents/ImportantData/MyStudy/myMLStudy/AlexNet')
+os.chdir('./AlexNet')
 
 # 超参数
 #原文使用随机梯度下降训练模型，批量大小为128个样本，动量为0.9，权重衰减为0.0005。
@@ -94,7 +94,7 @@ writer = SummaryWriter("runs/alexnet1")
 
 # Caltech101数据集没有train参数，需要手动分割训练集和测试集
 print(os.getcwd())
-dataset = torchvision.datasets.Caltech101(root='D:/User/Documents/ImportantData/MyStudy/myMLStudy/Datasets', download=True, transform=utils.transform_train)
+dataset = torchvision.datasets.Caltech101(root='./../Datasets', download=False, transform=utils.transform_train)
 # 手动划分训练集和测试集，这里简单地按9:1的比例划分
 train_size = int(0.9 * len(dataset))
 test_size = len(dataset) - train_size
