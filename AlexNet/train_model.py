@@ -159,7 +159,7 @@ if not os.path.exists('AlexNet.pth'):
             if (i+1) % 20 == 0:
                 print(f'Epoch [{epoch+1}/{num_epochs}], Step [{i+1}/{n_total_steps}], Loss: {loss.item():.4f}')
                 writer.add_scalar('training loss', running_loss/20, epoch*n_total_steps+i)
-                writer.add_scalar('training accuracy', 100*running_acc/(20*batch_size), '%', epoch*n_total_steps+i)
+                writer.add_scalar('training accuracy', 100*running_acc/(20*batch_size), epoch*n_total_steps+i)
                 running_loss = 0.0
                 running_acc =0.0
 
