@@ -110,6 +110,7 @@ for idx in range(len(dataset)):
     class_indices[label].append(idx)
 
 # Split each class separately
+np.random.seed(42)
 for label, indices in class_indices.items():
     np.random.shuffle(indices)
     split_point = int(len(indices) * train_ratio)

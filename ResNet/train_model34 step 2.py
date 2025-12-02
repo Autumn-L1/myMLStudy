@@ -16,15 +16,16 @@ os.chdir('./ResNet')
 # 超参数
 #原文使用
 #Caltech101数据集数据集更小，因此批量大小也改小了
-num_epochs = 50
+num_epochs = 100
 batch_size = 32
 momentum = 0.9
 weight_decay = 0.0005
 #原文对所有层使用相同的学习率，并在整个训练过程中手动调整。原文遵循的启发式方法是，当验证错误率不再随着当前学习率的提高而提高时，将学习率除以10。学习率初始化为0.01，并在终止前降低三倍。
-learning_rate = 0.005
+# learning_rate = 0.005
+learning_rate = 0.0005
 
 #TensorBoard
-writer = SummaryWriter("runs/resnet18")
+writer = SummaryWriter("runs/resnet34")
 
 
 # Caltech101数据集没有train参数，需要手动分割训练集和测试集
@@ -39,17 +40,18 @@ train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size,
 # Caltech101数据集的Subset会保留classes属性，可以直接获取
 classes = dataset.categories
 
-model = res.ResNet18(101)
+model = res.ResNet34(101)
 model = model.to(device)
 
 #选择一个模型保存点
-# model_path = None
-model_path = './checkpoints/resnet18/ResNet18_epoch_14.pth'
+model_path = './checkpoints/resnet34/ResNet34_epoch_49.pth'
+
 if model_path:
     model.load_state_dict(torch.load(model_path))
     start_epoch = int(model_path.split('_')[-1].split('.')[0])+1
 else:
-    start_epoch = 0
+    raise Exception('No model path')
+
 
 criterion = nn.CrossEntropyLoss()
 optimizer = torch.optim.SGD(model.parameters(), momentum=momentum, weight_decay=weight_decay, lr=learning_rate)
@@ -81,11 +83,11 @@ for epoch in range(start_epoch,num_epochs):
             writer.add_scalar('training accuracy', 100*running_acc/(20*batch_size), epoch*n_total_steps+i)
             running_loss = 0.0
             running_acc =0.0
-            
-    torch.save(model.state_dict(), f'./checkpoints/resnet18/ResNet18_epoch_{epoch}.pth')
+    # 保存点
+    torch.save(model.state_dict(), f'./checkpoints/resnet34/ResNet34_epoch_{epoch}.pth')
     if (epoch+1) % 5 == 0:
         for i in range(4):
-            if os.path.exists(f'./checkpoints/resnet18/ResNet18_epoch_{epoch-1-i}.pth'):
-                os.remove(f'./checkpoints/resnet18/ResNet18_epoch_{epoch-1-i}.pth')
-
+            if os.path.exists(f'./checkpoints/resnet34/ResNet34_epoch_{epoch-1-i}.pth'):
+                os.remove(f'./checkpoints/resnet34/ResNet34_epoch_{epoch-1-i}.pth')
+    
 print('Finished Training')

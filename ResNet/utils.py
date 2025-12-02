@@ -1,5 +1,8 @@
 import torch
 import torchvision.transforms as transforms
+import os
+import torchvision
+import numpy as np
 
 # ImageNet由可变分辨率的图像组成，AlexNet需要恒定的输入维度,因此需要将图像下采样到256×256的固定分辨率。
 # 下采样函数
@@ -62,4 +65,31 @@ transform_train = transforms.Compose([
     transforms.RandomCrop(224),
     AdjustRGB()
 ])
+
+#split dataset
+# Caltech101数据集没有train参数，需要手动分割训练集和测试集
+print(os.getcwd())
+dataset = torchvision.datasets.Caltech101(root='./Datasets', download=False)
+
+# Per-class train-test split
+train_indices = []
+test_indices = []
+train_ratio = 0.9
+
+# Group indices by class
+class_indices = {}
+for idx in range(len(dataset)):
+    _, label = dataset[idx]
+    if label not in class_indices:
+        class_indices[label] = []
+    class_indices[label].append(idx)
+
+# Split each class separately
+np.random.seed(42)
+for label, indices in class_indices.items():
+    np.random.shuffle(indices)
+    split_point = int(len(indices) * train_ratio)
+    train_indices.extend(indices[:split_point])
+    test_indices.extend(indices[split_point:])
+
 

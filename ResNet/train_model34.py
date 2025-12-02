@@ -31,34 +31,12 @@ writer = SummaryWriter("runs/resnet34")
 print(os.getcwd())
 dataset = torchvision.datasets.Caltech101(root='./../Datasets', download=False, transform=utils.transform_train)
 
-# Per-class train-test split
-train_indices = []
-test_indices = []
-train_ratio = 0.9
-
-# Group indices by class
-class_indices = {}
-for idx in range(len(dataset)):
-    _, label = dataset[idx]
-    if label not in class_indices:
-        class_indices[label] = []
-    class_indices[label].append(idx)
-
-# Split each class separately
-for label, indices in class_indices.items():
-    np.random.shuffle(indices)
-    split_point = int(len(indices) * train_ratio)
-    train_indices.extend(indices[:split_point])
-    test_indices.extend(indices[split_point:])
 
 # Create subset datasets
-train_dataset = torch.utils.data.Subset(dataset, train_indices)
-test_dataset = torch.utils.data.Subset(dataset, test_indices)
-
+train_dataset = torch.utils.data.Subset(dataset, utils.train_indices)
 train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size,
                                           shuffle=True)
-test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size,
-                                         shuffle=False)
+
 # Caltech101数据集的Subset会保留classes属性，可以直接获取
 classes = dataset.categories
 
@@ -66,7 +44,8 @@ model = res.ResNet34(101)
 model = model.to(device)
 
 #选择一个模型保存点
-model_path = './checkpoints/resnet34/ResNet34_epoch_16.pth'
+model_path = None
+# model_path = './checkpoints/resnet34/ResNet34_epoch_24.pth'
 
 if model_path:
     model.load_state_dict(torch.load(model_path))
