@@ -103,7 +103,14 @@ class ResNet34(nn.Module):
 
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
         self.fc = nn.Linear(512, num_classes)
-        
+
+    def make_layers(self, in_channels, out_channels, num_layers: int, downsample:bool = False) -> nn.Module:
+        downsample = [downsample]+[False]*(num_layers-1)
+        layers = nn.Sequential()
+        for i in range(num_layers):
+            layers.add_module(f"block{i}" ,ResidualConnectionBlock(in_channels, out_channels, downsample[i]))
+            in_channels = out_channels
+        return layers
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = self.conv1(x)

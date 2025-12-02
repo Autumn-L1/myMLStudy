@@ -24,7 +24,7 @@ weight_decay = 0.0005
 learning_rate = 0.005
 
 #TensorBoard
-writer = SummaryWriter("runs/resnet18")
+writer = SummaryWriter("runs/resnet34")
 
 
 # Caltech101数据集没有train参数，需要手动分割训练集和测试集
@@ -62,8 +62,18 @@ test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size,
 # Caltech101数据集的Subset会保留classes属性，可以直接获取
 classes = dataset.categories
 
-model = res.ResNet18(101)
+model = res.ResNet34(101)
 model = model.to(device)
+
+#选择一个模型保存点
+model_path = './checkpoints/resnet34/ResNet34_epoch_16.pth'
+
+if model_path:
+    model.load_state_dict(torch.load(model_path))
+    start_epoch = int(model_path.split('_')[-1].split('.')[0])+1
+else:
+    start_epoch = 0
+
 
 criterion = nn.CrossEntropyLoss()
 optimizer = torch.optim.SGD(model.parameters(), momentum=momentum, weight_decay=weight_decay, lr=learning_rate)
@@ -72,7 +82,7 @@ running_loss = 0.0
 running_acc = 0
 
 n_total_steps = len(train_loader)
-for epoch in range(num_epochs):
+for epoch in range(start_epoch,num_epochs):
     for i, (images, labels) in enumerate(train_loader):
         images = images.to(device)
         labels = labels.to(device)
@@ -90,11 +100,16 @@ for epoch in range(num_epochs):
 
         # 打印结果
         if (i+1) % 20 == 0:
-            print(f'Epoch [{epoch+1}/{num_epochs}], Step [{i+1}/{n_total_steps}], Loss: {loss.item():.4f}')
+            print(f'Epoch{epoch} [{epoch+1}/{num_epochs}], Step [{i+1}/{n_total_steps}], Loss: {loss.item():.4f}')
             writer.add_scalar('training loss', running_loss/20, epoch*n_total_steps+i)
             writer.add_scalar('training accuracy', 100*running_acc/(20*batch_size), epoch*n_total_steps+i)
             running_loss = 0.0
             running_acc =0.0
-
+    # 保存点
+    torch.save(model.state_dict(), f'./checkpoints/resnet34/ResNet34_epoch_{epoch}.pth')
+    if (epoch+1) % 5 == 0:
+        for i in range(4):
+            if os.path.exists(f'./checkpoints/resnet34/ResNet34_epoch_{epoch-1-i}.pth'):
+                os.remove(f'./checkpoints/resnet34/ResNet34_epoch_{epoch-1-i}.pth')
+    
 print('Finished Training')
-torch.save(model.state_dict(), 'ResNet18.pth')
