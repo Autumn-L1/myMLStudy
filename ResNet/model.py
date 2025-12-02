@@ -1,21 +1,39 @@
 import torch
 import torch.nn as nn
 import copy
+from typing import Union, Optional
 
 
 class ResidualConnectionBlock(nn.Module):
-    def __init__(self, layers: nn.Module, times:int = 1) -> None:
+    def __init__(self, layers: Union[list[nn.Module],nn.Module], times:Union[list[int],int] = 1, IdentityLayers: nn.Module = None) -> None:
         super().__init__()
         self.layers = nn.ModuleList()
-        self.layers = nn.ModuleList([copy.deepcopy(layers) for _ in range(times)])
+        if isinstance(layers, nn.Module):
+            layers = [layers]
+        if isinstance(times, int):
+            times = [times]*len(layers)
+        if len(layers) != len(times):
+            raise ValueError("The length of layers and times must be equal.")
+        for i, layer in enumerate(layers):
+            repeat_count = times[i]
+            for _ in range(repeat_count):
+                self.layers.append(copy.deepcopy(layer))
+        self.IdentityLayers = IdentityLayers
         self.relu = nn.ReLU(inplace=True)
 
 
     
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        if self.IdentityLayers:
+            identity = self.IdentityLayers(x.clone())
+        else:
+            identity = x.clone()
+
         for layer in self.layers:
-            x = layer(x) + x
-            x = self.relu(x)
+            x = layer(x)
+        
+        x = x + identity
+        x = self.relu(x)
         return x
     
 class ResNet18(nn.Module):
@@ -33,20 +51,45 @@ class ResNet18(nn.Module):
             nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=1, bias=False),
             nn.BatchNorm2d(64),
         ), 2)
-        self.conv3 = ResidualConnectionBlock(nn.Sequential(
-            nn.Conv2d(64, 128, kernel_size=3, stride=2, padding=1, bias=False),
-            nn.BatchNorm2d(128),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(128, 128, kernel_size=3, stride=1, padding=1, bias=False),
-            nn.BatchNorm2d(128),
-        ), 2)
-        self.conv4 = ResidualConnectionBlock(nn.Sequential(
-            nn.Conv2d(128, 256, kernel_size=3, stride=2, padding=1, bias=False),
-            nn.BatchNorm2d(256),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(256, 256, kernel_size=3, stride=1, padding=1, bias=False),
-            nn.BatchNorm2d(256),
-        ), 2)
+        self.conv3 = ResidualConnectionBlock(
+            layers = [nn.Sequential(
+                nn.Conv2d(64, 128, kernel_size=3, stride=2, padding=1, bias=False),
+                nn.BatchNorm2d(128),
+                nn.ReLU(inplace=True),
+                nn.Conv2d(128, 128, kernel_size=3, stride=1, padding=1, bias=False),
+                nn.BatchNorm2d(128),
+            ),nn.Sequential(
+                nn.Conv2d(128, 128, kernel_size=3, stride=1, padding=1, bias=False),
+                nn.BatchNorm2d(128),
+                nn.ReLU(inplace=True),
+                nn.Conv2d(128, 128, kernel_size=3, stride=1, padding=1, bias=False),
+                nn.BatchNorm2d(128),
+            )], 
+            times=[1,1],
+            IdentityLayers = nn.Sequential(
+                nn.Conv2d(64, 128, kernel_size=1, stride=2, padding=1, bias=False),
+                nn.BatchNorm2d(128),
+            ))
+        self.conv4 = ResidualConnectionBlock(
+            layers = [nn.Sequential(
+                nn.Conv2d(128, 256, kernel_size=3, stride=2, padding=1, bias=False),
+                nn.BatchNorm2d(256),
+                nn.ReLU(inplace=True),
+                nn.Conv2d(256, 256, kernel_size=3, stride=1, padding=1, bias=False),
+                nn.BatchNorm2d(256),
+            ),nn.Sequential(
+                nn.Conv2d(256, 256, kernel_size=3, stride=1, padding=1, bias=False),
+                nn.BatchNorm2d(256),
+                nn.ReLU(inplace=True),
+                nn.Conv2d(256, 256, kernel_size=3, stride=1, padding=1, bias=False),
+                nn.BatchNorm2d(256),
+            )],
+            times=[1,1],
+            IdentityLayers = nn.Sequential(
+                nn.Conv2d(128, 256, kernel_size=1, stride=2, padding=1, bias=False),
+                nn.BatchNorm2d(256),
+            )
+        )
         self.conv5 = ResidualConnectionBlock(nn.Sequential(
             nn.Conv2d(256, 512, kernel_size=3, stride=2, padding=1, bias=False),
             nn.BatchNorm2d(512),
@@ -56,6 +99,8 @@ class ResNet18(nn.Module):
         ), 2)
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
         self.fc = nn.Linear(512, num_classes)
+        self.bn1 = nn.BatchNorm2d(64)
+        self.relu = nn.ReLU(inplace=True)
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = self.conv1(x)
         x = self.bn1(x)
@@ -109,6 +154,8 @@ class ResNet34(nn.Module):
         ), 3)
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
         self.fc = nn.Linear(512, num_classes)
+        self.bn1 = nn.BatchNorm2d(64)
+        self.relu = nn.ReLU(inplace=True)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = self.conv1(x)
