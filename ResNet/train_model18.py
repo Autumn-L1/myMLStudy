@@ -43,8 +43,8 @@ model = res.ResNet18(101)
 model = model.to(device)
 
 #选择一个模型保存点
-# model_path = None
-model_path = './checkpoints/resnet18/ResNet18_epoch_14.pth'
+model_path = None
+#model_path = './checkpoints/resnet18/ResNet18_epoch_14.pth'
 if model_path:
     model.load_state_dict(torch.load(model_path))
     start_epoch = int(model_path.split('_')[-1].split('.')[0])+1
