@@ -56,8 +56,8 @@ else:
 criterion = nn.CrossEntropyLoss()
 optimizer = torch.optim.SGD(model.parameters(), momentum=momentum, weight_decay=weight_decay, lr=learning_rate)
 
-running_loss = 0.0
-running_acc = 0
+running_loss = []
+running_acc = []
 
 n_total_steps = len(train_loader)
 for epoch in range(start_epoch,num_epochs):
@@ -73,16 +73,17 @@ for epoch in range(start_epoch,num_epochs):
         loss.backward()
         optimizer.step()
 
-        running_loss += loss.item()
-        running_acc += (torch.max(outputs.data,1)[1] == labels).sum().item()
+        running_loss.append(loss.item()) 
+        running_acc.append((torch.max(outputs.data,1)[1] == labels).sum().item()/len(labels))
 
         # 打印结果
         if (i+1) % 20 == 0:
             print(f'Epoch{epoch} [{epoch+1}/{num_epochs}], Step [{i+1}/{n_total_steps}], Loss: {loss.item():.4f}')
-            writer.add_scalar('training loss', running_loss/20, epoch*n_total_steps+i)
-            writer.add_scalar('training accuracy', 100*running_acc/(20*batch_size), epoch*n_total_steps+i)
-            running_loss = 0.0
-            running_acc =0.0
+            print(running_acc)
+            writer.add_scalar('training loss', np.mean(running_loss), epoch*n_total_steps+i)
+            writer.add_scalar('training accuracy', np.mean(running_acc)*100, epoch*n_total_steps+i)
+            running_loss = []
+            running_acc = []
     # 保存点
     torch.save(model.state_dict(), f'./checkpoints/resnet34/ResNet34_epoch_{epoch}.pth')
     if (epoch+1) % 5 == 0:
