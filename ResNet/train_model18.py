@@ -8,6 +8,7 @@ from torch.utils.tensorboard import SummaryWriter
 
 import model as res
 import utils
+from test_model import test
 
 # 配置
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -79,6 +80,9 @@ for epoch in range(start_epoch,num_epochs):
             print(f'Epoch{epoch} [{epoch+1}/{num_epochs}], Step [{i+1}/{n_total_steps}], Loss: {loss.item():.4f}')
             writer.add_scalar('training loss', running_loss/20, epoch*n_total_steps+i)
             writer.add_scalar('training accuracy', 100*running_acc/(20*batch_size), epoch*n_total_steps+i)
+            top1_acc, top5_acc = test(model)
+            writer.add_scalar('top1 accuracy', top1_acc, epoch*n_total_steps+i)
+            writer.add_scalar('top5 accuracy', top5_acc, epoch*n_total_steps+i)
             running_loss = 0.0
             running_acc =0.0
             
