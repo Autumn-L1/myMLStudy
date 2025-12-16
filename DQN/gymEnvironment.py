@@ -1,8 +1,11 @@
 #reference https://github.com/devsisters/DQN-tensorflow/blob/master/dqn/environment.py
 import gymnasium as gym
 import random
+import torch
 import numpy as np
+import torch
 from PIL import Image
+from collections import deque
 
 class Config:
     def __init__(self,
@@ -12,7 +15,8 @@ class Config:
                  action_repeat=4,
                  random_start=10,
                  display=False,
-                 render_mode='rgb_array'):
+                 render_mode='rgb_array',
+                 memory_size = 4):
       self.env_name = env_name
       self.screen_width = screen_width
       self.screen_height = screen_height
@@ -20,6 +24,7 @@ class Config:
       self.random_start = random_start
       self.display = display
       self.render_mode = render_mode
+      self.memory_size = memory_size 
 
 class Environment(object):
   def __init__(self, config):
@@ -36,6 +41,8 @@ class Environment(object):
     self.terminal = True
     self.truncated = False
     self.info = {}
+    self.memory = deque(maxlen=config.memory_size)
+    self.memory_size = config.memory_size
 
   def new_game(self, from_random_game=False):
     if self.lives == 0:
@@ -54,7 +61,7 @@ class Environment(object):
 
   def _step(self, action):
     self._screen, self.reward, self.terminal, self.truncated,_ = self.env.step(action)
-
+    self.memory.append(torch.from_numpy(np.array(self.screen)))
   def _random_step(self):
     action = self.env.action_space.sample()
     self._step(action)
@@ -74,7 +81,11 @@ class Environment(object):
    return 0 if self.terminal else 1
   @property
   def state(self):
-    return self.screen, self.reward, self.terminal, self.truncated, self.info
+    if len(self.memory) ==  self.memory_size:
+      screen_stacked = torch.stack(list(self.memory)).unsqueeze(0) 
+      return screen_stacked, self.reward, self.terminal, self.truncated, self.info
+    else:
+      raise Exception('Not enough frames in memory')
 
   def render(self):
     if self.display:
