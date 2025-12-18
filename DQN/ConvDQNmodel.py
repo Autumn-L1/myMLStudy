@@ -18,7 +18,8 @@ class QNetwork(nn.Module):
         self.fc = nn.Sequential(
             nn.Linear(7 * 7 * 64, 512),
             nn.ReLU(),
-            nn.Linear(512, action_size)
+            nn.Linear(512, action_size),
+            nn.Softmax()
         )
 
     def forward(self, x):
@@ -105,10 +106,7 @@ class DQN(nn.Module):
     
     def state_dict(self):
         return self.target_network.state_dict()
-    
-
-    
-
+        
     def load_state_dict(self, state_dict):
         self.target_network.load_state_dict(state_dict)
         self.eval_network.load_state_dict(state_dict)

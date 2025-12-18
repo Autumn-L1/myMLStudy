@@ -16,7 +16,11 @@ class Config:
                  random_start=10,
                  display=False,
                  render_mode='rgb_array',
-                 memory_size = 4):
+                 memory_size = 4,
+                 record_video=False,
+                 video_folder="video_folder", 
+                 name_prefix="training",
+                 episode_trigger=lambda x: True):
       self.env_name = env_name
       self.screen_width = screen_width
       self.screen_height = screen_height
@@ -25,6 +29,10 @@ class Config:
       self.display = display
       self.render_mode = render_mode
       self.memory_size = memory_size 
+      self.record_video = record_video
+      self.video_folder = video_folder
+      self.name_prefix = name_prefix
+      self.episode_trigger = episode_trigger
 
 class Environment(object):
   def __init__(self, config):
@@ -44,10 +52,14 @@ class Environment(object):
     self.memory = deque(maxlen=config.memory_size)
     self.memory_size = config.memory_size
 
+    if config.record_video:
+      self.env = gym.wrappers.RecordVideo(self.env, video_folder=config.video_folder, name_prefix=config.name_prefix, episode_trigger=config.episode_trigger)
+      self.env = gym.wrappers.RecordEpisodeStatistics(self.env)
+
   def new_game(self, from_random_game=False):
     if self.lives == 0:
       self._screen = self.env.reset()
-    self._step(0)
+    self._step(1)
     self.render()
     return self.screen, 0, self.terminal, False, self.info  # obs, reward, terminated, truncated, info
 

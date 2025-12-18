@@ -16,9 +16,9 @@ import gymEnvironment
 
 #device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 device = torch.device("cpu")
-writer = SummaryWriter("./DQN/runs/breakout")
+writer = SummaryWriter("./DQN/runs/BasicMath")
 gymEnvironmentConfig = gymEnvironment.Config(
-    env_name='ALE/Breakout-v5',
+    env_name='ALE/BasicMath-v5',
     display=True,
     screen_width=84,
     screen_height=84,
@@ -27,19 +27,18 @@ gymEnvironmentConfig = gymEnvironment.Config(
     #render_mode='human',
     memory_size = 4,
     record_video=True,
-    video_folder="Breakout-agent", 
+    video_folder="BasicMath-agent", 
     name_prefix="training",
     episode_trigger=lambda x: x % 50 == 0
 )
 frame_skip = 4
 
 env = gymEnvironment.GymEnvironment(gymEnvironmentConfig)
-
 dqn = DQN(env.action_size).to(device)
 
 def run():
     step = 0
-    for episode in range(200):
+    for episode in range(400):
         episode_step = 0
         env.new_game()
         env.render()
@@ -71,6 +70,6 @@ def run():
             if done:
                 break
     print('game over')
-    torch.save(dqn.state_dict(), 'model_breakout.pth')
+    torch.save(dqn.state_dict(), 'model_math.pth')
 run()
 env.close()
