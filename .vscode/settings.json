@@ -1,0 +1,10 @@
+{
+  "python.analysis.exclude": [
+    "GAN/original code"
+  ],
+  "search.exclude": {
+    "GAN/original code": true
+  },
+  // 关键：让语言服务跳过该目录
+  "typescript.preferences.includePackageJsonAutoImports": "auto"
+}
