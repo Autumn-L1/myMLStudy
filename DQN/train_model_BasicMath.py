@@ -27,7 +27,7 @@ gymEnvironmentConfig = gymEnvironment.Config(
     #render_mode='human',
     memory_size = 4,
     record_video=True,
-    video_folder="BasicMath-agent", 
+    video_folder="./DQN/record/BasicMath-agent", 
     name_prefix="training",
     episode_trigger=lambda x: x % 50 == 0
 )
