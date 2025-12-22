@@ -14,26 +14,30 @@ import loss_functions as lf
 
 # 配置
 os.chdir("./GAN")
-target_class = 1
+target_class = 95 # 95 is water_lilly
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-writerD = SummaryWriter("runs/mnist_class_%d_D" % target_class)
-writerG = SummaryWriter("runs/mnist_class_%d_G" % target_class)
+writerD = SummaryWriter("runs/Caltech101_class_%d_D" % target_class)
+writerG = SummaryWriter("runs/Caltech101_class_%d_G" % target_class)
 lr = 0.0002
 batch_size = 64
 num_iteration = 500
 
 num_D_training_round = 100
 # 数据集
-dataset = torchvision.datasets.MNIST(root='./../Datasets', train=True, transform=transforms.ToTensor(), download=False)
-indices = [i for i in range(len(dataset)) if dataset.targets[i] == target_class]
+transform = transforms.Compose([
+    transforms.Resize((256, 256)),
+    transforms.ToTensor(),
+]) 
+dataset = torchvision.datasets.Caltech101(root='./../Datasets', transform=transform, download=False)
+indices = [i for i in range(len(dataset)) if dataset.y[i] == target_class]
 subset = torch.utils.data.Subset(dataset, indices)
 
 train_loader = torch.utils.data.DataLoader(subset, batch_size=batch_size, shuffle=True)
 
 # 模型
 model = model.GAN(noise_size = 100, 
-                  output_size = (1, 28, 28), 
+                  output_size = (3, 256, 256), 
                   loss_fn=lf.OriginalGANLoss(device = device),
                   lr=lr)
 model.to(device)
@@ -41,8 +45,8 @@ model.to(device)
 #保存图片的函数
 if not os.path.exists("./generated_images"):
     os.mkdir("./generated_images")
-if not os.path.exists("./generated_images/mnist_class_%d" % target_class):
-    os.mkdir("./generated_images/mnist_class_%d" % target_class)
+if not os.path.exists("./generated_images/Caltech101_class_%d" % target_class):
+    os.mkdir("./generated_images/Caltech101_class_%d" % target_class)
 def save_generated_images(gan_model, iteration, num_images=10):
     gan_model.eval()  # Set model to evaluation mode
     with torch.no_grad():
@@ -63,7 +67,7 @@ def save_generated_images(gan_model, iteration, num_images=10):
         plt.title(f'Generated Images for Digit {target_class} at Iteration {iteration}', fontsize=14)
         
         # Save the figure
-        plt.savefig(f'./generated_images/mnist_class_{target_class}/generated_images_iter_{iteration}_digit_{target_class}.png', 
+        plt.savefig(f'./generated_images/Caltech101_class_{target_class}/generated_images_iter_{iteration}_digit_{target_class}.png', 
                    bbox_inches='tight', dpi=300)
         plt.close()
     
