@@ -10,11 +10,14 @@ class Discriminater(nn.Module):
         super(Discriminater, self).__init__()
         if isinstance(input_size, int):
             self.input_size = (input_size,input_size)
-        elif isinstance(input_size, tuple[int,int]):
+        elif isinstance(input_size, tuple):
             self.input_size = input_size
         else:
             raise ValueError("input_size must be int or tuple[int,int]")
-        self.fc1 = nn.Linear(self.input_size[0]*self.input_size[1], 512)
+        linear_in_size = 1
+        for i in range(len(self.input_size)):
+            linear_in_size *= self.input_size[i]
+        self.fc1 = nn.Linear(linear_in_size, 512)
         self.fc2 = nn.Linear(512, 256)
         self.fc3 = nn.Linear(256, 1)
         self.relu = nn.ReLU()
@@ -33,13 +36,16 @@ class Generator(nn.Module):
         super(Generator, self).__init__()
         if isinstance(output_size, int):
             self.output_size = (output_size,output_size)
-        elif isinstance(output_size, tuple[int,int]):
+        elif isinstance(output_size, tuple):
             self.output_size = output_size
         else:
             raise ValueError("output_size must be int or tuple[int,int]")
+        linear_out_size = 1
+        for i in range(len(self.output_size)):
+            linear_out_size *= self.output_size[i]
         self.fc1 = nn.Linear(input_size, 256)
         self.fc2 = nn.Linear(256, 512)
-        self.fc3 = nn.Linear(512, self.output_size[0]*self.output_size[1])
+        self.fc3 = nn.Linear(512, linear_out_size)
         self.relu = nn.ReLU()
         self.tanh = nn.Tanh()
 
@@ -53,14 +59,17 @@ class Generator(nn.Module):
 
 class GAN(nn.Module):
     def __init__(self, 
-                 input_size, 
+                 noise_size, 
                  output_size,
+                 loss_fn,
                  lr = 0.0002,
                  d_training_round = 100,
-                 loss_fn = lf.OriginalGANLoss()):
+                 device = None
+                 ):
         super(GAN, self).__init__()
-        self.input_size = input_size
-        self.generator = Generator(input_size, output_size)
+
+        self.input_size = noise_size
+        self.generator = Generator(noise_size, output_size)
         self.discriminator = Discriminater(output_size)
         self.loss_fn = loss_fn
         self.optimizerD = torch.optim.Adam(self.generator.parameters(), lr=lr)
@@ -68,7 +77,15 @@ class GAN(nn.Module):
         self.info = {
             "last_D_loss" : 0,
             "last_G_loss" : 0,
+            "acc_D": 0,
+            "acc_real": 0,
+            "acc_fake": 0,
         }
+        self.device = device
+
+    def to(self, device):
+        super().to(device)
+        self.device = device
 
     def generate(self, input):
         return self.generator(input)
@@ -79,31 +96,38 @@ class GAN(nn.Module):
         # 1. Update D network
         self.optimizerD.zero_grad()
 
-        noise = torch.randn(real.size(0), self.input_size)
+        noise = torch.randn(real.size(0), self.input_size).to(real.device)
         fake = self.generate(noise)
         # real标签1， fake标签0
-        lables = torch.cat([torch.ones(real.size(0)), torch.zeros(real.size(0))], dim=0)
-        predictions = self.discriminate(torch.cat([real, fake], dim=0))
+        #lables = torch.cat([torch.ones(real.size(0)), torch.zeros(real.size(0))], dim=0)
+        predictions_real = self.discriminate(real)
+        predictions_fake = self.discriminate(fake)
 
-        loss_D = self.loss_fn.discriminator_loss(predictions, lables)
+        loss_D = self.loss_fn.discriminator_loss(predictions_real, predictions_fake)
         loss_D.backward()
         self.optimizerD.step()
+        self.info["last_D_loss"] = loss_D.item()
+        acc_D = (sum(predictions_real > 0.5).item()+ sum(predictions_fake < 0.5).item())/ (2*real.size(0))
+        acc_real = sum(predictions_real > 0.5).item() / real.size(0)
+        acc_fake = sum(predictions_fake < 0.5).item() / real.size(0)
+        self.info["acc_D"] = acc_D
+        self.info["acc_real"] = acc_real
+        self.info["acc_fake"] = acc_fake
 
 
-    def stepG(self, real):
+    def stepG(self, batch_size):
         # 2. Update G network
         self.optimizerG.zero_grad()
 
-        noise = torch.randn(real.size(0), self.input_size)
+        noise = torch.randn(batch_size, self.input_size).to(self.device)
         fake = self.generate(noise)
 
-        # real标签1， fake标签0
-        lables = torch.cat([torch.ones(real.size(0)), torch.zeros(real.size(0))], dim=0)
-        predictions = self.discriminate(torch.cat([real, fake], dim=0))
+        predictions = self.discriminate(fake)
 
-        loss_G = self.loss_fn.generator_loss(predictions,lables)
+        loss_G = self.loss_fn.generator_loss(predictions)
         loss_G.backward()
         self.optimizerG.step()
+        self.info["last_G_loss"] = loss_G.item()
 
     def info(self):
         return self.info
