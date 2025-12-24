@@ -23,7 +23,7 @@ class GANconfig:
     def __init__(self,
                  noise_size = 100,
                  image_size = 28,
-                 loss_fn = lf.OriginalGANLoss,
+                 loss_fn = None,
                  device = None,
                  lr = 0.0002,
                  lr_D = None,
@@ -53,6 +53,14 @@ class GANconfig:
         self.noise_sigma = noise_sigma
 
         self.label_smooth = label_smooth
+
+        if self.label_smooth:
+            self.loss_fn = lf.Label_smooth_GANLoss(device)
+        else:
+            if loss_fn == None:
+                self.loss_fn = lf.Original_GANLoss(device)
+            else: 
+                self.loss_fn = loss_fn
 
 class Discriminater(nn.Module):
     def __init__(self, input_size):
