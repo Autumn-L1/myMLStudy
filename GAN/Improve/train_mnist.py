@@ -20,8 +20,8 @@ RUNS_DIR = os.path.join(BASE_DIR, "runs")
 
 os.chdir(BASE_DIR)
 target_class = 2
-generated_class_dir = os.path.join(GENERATED_IMAGES_DIR, f"mnist_class_{target_class}_noise+label_smooth")
-writer_dir = os.path.join(RUNS_DIR, f"mnist_class_{target_class}_noise+label_smooth")
+generated_class_dir = os.path.join(GENERATED_IMAGES_DIR, f"mnist_class_{target_class}_label_smooth")
+writer_dir = os.path.join(RUNS_DIR, f"mnist_class_{target_class}_label_smooth")
 
 batch_size = 64
 num_iteration = 500
@@ -34,8 +34,8 @@ config = model.GANconfig(
     lr_D = None,
     lr_G = None,
 
-    noise_to_image= True,
-    #noise_to_image= False,
+    #noise_to_image= True,
+    noise_to_image= False,
     label_smooth= True,
 )
 

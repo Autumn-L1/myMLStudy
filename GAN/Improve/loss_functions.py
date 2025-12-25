@@ -28,7 +28,6 @@ class Original_GANLoss:
         target_labels = torch.ones_like(fake_output, device=self.device)
         g_loss = self.criterion(fake_output, target_labels)
         return g_loss
-    
 # class Label_smooth_GANLoss:
 #     def __init__(self, device):
 #         self.device = device
@@ -87,3 +86,5 @@ class Label_smooth_GANLoss:
         target_labels = torch.ones_like(fake_output, device=self.device) * (1.0 - self.smoothing)
         g_loss = self.criterion(fake_output, target_labels)
         return g_loss
+
+
