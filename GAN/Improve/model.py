@@ -23,7 +23,7 @@ class GANconfig:
     def __init__(self,
                  noise_size = 100,
                  image_size = 28,
-                 loss_fn = lf.OriginalGANLoss,
+                 loss_fn = None,
                  device = None,
                  lr = 0.0002,
                  lr_D = None,
@@ -31,6 +31,9 @@ class GANconfig:
 
 
                  noise_to_image = False,
+                 noise_type = "gaussian",
+                 noise_mean = 0, 
+                 noise_sigma = 1,
                 
                  label_smooth = False,
                  ):
@@ -40,10 +43,24 @@ class GANconfig:
         self.device = device
 
         if lr_D is None:
-            lr_D = lr
+            self.lr_D = lr
         if lr_G is None:
-            lr_G = lr
+            self.lr_G = lr
+        
+        self.noise_to_image = noise_to_image
+        self.noise_type = noise_type
+        self.noise_mean = noise_mean
+        self.noise_sigma = noise_sigma
 
+        self.label_smooth = label_smooth
+
+        if self.label_smooth:
+            self.loss_fn = lf.Label_smooth_GANLoss(device)
+        else:
+            if loss_fn == None:
+                self.loss_fn = lf.Original_GANLoss(device)
+            else: 
+                self.loss_fn = loss_fn
 
 class Discriminater(nn.Module):
     def __init__(self, input_size):
@@ -168,9 +185,14 @@ class GAN(nn.Module):
 
 
     def image_process(self, image):
-        if self.config.add_noise: 
+        if self.config.noise_to_image: 
             image = self.add_noise(image)
         return image
     def add_noise(self, image):
+        if self.config.noise_type == "gaussian":
+            image = image + torch.randn_like(image) * self.config.noise_sigma + self.config.noise_mean
+        else:
+            raise ValueError("unknown noise_type")
         return image
+    
 
