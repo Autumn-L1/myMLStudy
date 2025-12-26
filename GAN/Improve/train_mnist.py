@@ -20,15 +20,15 @@ RUNS_DIR = os.path.join(BASE_DIR, "runs")
 
 os.chdir(BASE_DIR)
 target_class = 2
-generated_class_dir = os.path.join(GENERATED_IMAGES_DIR, f"mnist_class_{target_class}_label_smooth")
-writer_dir = os.path.join(RUNS_DIR, f"mnist_class_{target_class}_label_smooth")
+generated_class_dir = os.path.join(GENERATED_IMAGES_DIR, f"mnist_class_{target_class}_2-1")
+writer_dir = os.path.join(RUNS_DIR, f"mnist_class_{target_class}_2-1")
 
 batch_size = 64
-num_iteration = 500
+num_iteration = 50000
 config = model.GANconfig(
     noise_size = 100,
     image_size = (1, 28, 28),
-    loss_fn = lf.Original_GANLoss,
+    #loss_fn = lf.Original_GANLoss,
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu"),
     lr = 0.0002,
     lr_D = None,
@@ -36,7 +36,7 @@ config = model.GANconfig(
 
     #noise_to_image= True,
     noise_to_image= False,
-    label_smooth= True,
+    label_smooth= False,
 )
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -45,7 +45,8 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 writer = SummaryWriter(writer_dir)
 
 
-num_D_training_round = 100
+num_D_training_round = 2
+num_G_training_round = 1
 # 数据集
 dataset = torchvision.datasets.MNIST(root=DATASETS_DIR, train=True, transform=transforms.ToTensor(), download=False)
 indices = [i for i in range(len(dataset)) if dataset.targets[i] == target_class]
@@ -106,14 +107,14 @@ for i in range(num_iteration):
             writer.add_scalar("D_acc_real", model.info["acc_real"], step_count)
             writer.add_scalar("D_acc_fake", model.info["acc_fake"], step_count)
         step_count += 1
-    model.stepG(batch_size)
-    print("iteration: ", i, "; G_loss: %.4f" % model.info["last_G_loss"])
-    writer.add_scalar("G_loss", model.info["last_G_loss"], step_count)
+    for k in range(num_G_training_round):
+        model.stepG(batch_size)
+        print("iteration: ", i, "; G_round_",k ,"; G_loss: %.4f" % model.info["last_G_loss"])
+        writer.add_scalar("G_loss", model.info["last_G_loss"], step_count)
     if i % 20 == 0:
         save_generated_images(model, i, 10)
     step_count += 1
-    delta = -0.1*((model.info["acc_D"]-0.75)/0.25)*num_D_training_round
-
+    # delta = -0.1*((model.info["acc_D"]-0.75)/0.25)*num_D_training_round
     # if num_D_training_round > 10 and delta <= 0:
     #     num_D_training_round = round(num_D_training_round + delta)
     # elif num_D_training_round < 600 and delta >= 0:

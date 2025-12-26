@@ -39,7 +39,6 @@ class GANconfig:
                  ):
         self.noise_size = noise_size
         self.image_size = image_size
-        self.loss_fn = loss_fn(device)
         self.device = device
 
         if lr_D is None:
@@ -148,7 +147,6 @@ class GAN(nn.Module):
         return self.discriminator(input)
     
     def stepD(self, real):
-        # 1. Update D network
         self.optimizerD.zero_grad()
 
         noise = torch.randn(real.size(0), self.noise_size).to(real.device)

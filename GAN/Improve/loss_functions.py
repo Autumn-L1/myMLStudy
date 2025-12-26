@@ -24,7 +24,7 @@ class Original_GANLoss:
         return d_loss
     
     def generator_loss(self, fake_output):
-    # 生成器希望判别器将生成样本判断为真实样本
+        # 生成器希望判别器将生成样本判断为真实样本
         target_labels = torch.ones_like(fake_output, device=self.device)
         g_loss = self.criterion(fake_output, target_labels)
         return g_loss
