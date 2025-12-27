@@ -43,8 +43,12 @@ class GANconfig:
 
         if lr_D is None:
             self.lr_D = lr
+        else:
+            self.lr_D = lr_D
         if lr_G is None:
             self.lr_G = lr
+        else:
+            self.lr_G = lr_G
         
         self.noise_to_image = noise_to_image
         self.noise_type = noise_type

@@ -20,8 +20,8 @@ RUNS_DIR = os.path.join(BASE_DIR, "runs")
 
 os.chdir(BASE_DIR)
 target_class = 2
-generated_class_dir = os.path.join(GENERATED_IMAGES_DIR, f"mnist_class_{target_class}_2-1")
-writer_dir = os.path.join(RUNS_DIR, f"mnist_class_{target_class}_2-1")
+generated_class_dir = os.path.join(GENERATED_IMAGES_DIR, f"mnist_class_{target_class}_2-1_noise+TTUR")
+writer_dir = os.path.join(RUNS_DIR, f"mnist_class_{target_class}_2-1_noise+TTUR")
 
 batch_size = 64
 num_iteration = 50000
@@ -31,11 +31,10 @@ config = model.GANconfig(
     #loss_fn = lf.Original_GANLoss,
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu"),
     lr = 0.0002,
-    lr_D = None,
-    lr_G = None,
+    lr_D = 0.0004,
+    lr_G = 0.0001,
 
-    #noise_to_image= True,
-    noise_to_image= False,
+    noise_to_image= True,
     label_smooth= False,
 )
 
@@ -111,7 +110,7 @@ for i in range(num_iteration):
         model.stepG(batch_size)
         print("iteration: ", i, "; G_round_",k ,"; G_loss: %.4f" % model.info["last_G_loss"])
         writer.add_scalar("G_loss", model.info["last_G_loss"], step_count)
-    if i % 20 == 0:
+    if i % 500 == 0:
         save_generated_images(model, i, 10)
     step_count += 1
     # delta = -0.1*((model.info["acc_D"]-0.75)/0.25)*num_D_training_round
